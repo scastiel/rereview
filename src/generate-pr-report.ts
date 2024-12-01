@@ -41,15 +41,23 @@ export async function generatePullRequestReport(pullRequestUrlString: string) {
 
   const schema = z.object({
     descriptionReport: z.string().describe(`
-        A report about the PR description.
-        Should include answers to questions such as but not limited to:
-          - Is it complete?
-          - Does it contain the necessary context?
-          - Does the tone invite to review the PR?
-      `),
+      A report about the PR description.
+      Should include answers to questions such as but not limited to:
+        - Is it complete?
+        - Does it contain the necessary context?
+        - Does the tone invite to review the PR?
+    `),
     descriptionReportBookReferences: z.array(z.string()).describe(`
-        Chapters referenced in the description report.
-      `),
+      Chapters referenced in the description report.
+    `),
+    descriptionGrade: z.enum(["A", "B", "C", "D"]).describe(`
+      A grade to evaluate the PR description: A if this description is great,
+      B if it is okay but can be improved, C if it needs improvement to be valuable,
+      D if its content or tone is problematic.
+    `),
+    descriptionGradeReasoning: z.string().describe(`
+      Detail your reasoning for assigning this grade.
+    `),
     commentReports: z
       .array(
         z.object({
@@ -58,15 +66,23 @@ export async function generatePullRequestReport(pullRequestUrlString: string) {
             .boolean()
             .describe("Wether the comment is automated (posted by a bot)"),
           commentReport: z.string().describe(`
-              A report about the comment
-              Should include answers to questions such as but not limited to:
-                - Does it offer constructive feedback?
-                - Does it foster valuable conversation?
-                - Is the tone nice?
-            `),
+            A report about the comment.
+            Should include answers to questions such as but not limited to:
+              - Does it offer constructive feedback?
+              - Does it foster valuable conversation?
+              - Is the tone nice?
+          `),
           commentReportBookReferences: z.array(z.string()).describe(`
-              Chapters referenced in the comment report.
-            `),
+            Chapters referenced in the comment report.
+          `),
+          commentGrade: z.enum(["A", "B", "C", "D"]).describe(`
+            A grade to evaluate the comment: A if it is great, B if it is okay
+            but can be improved, C if it needs improvement to be valuable,
+            D if its content or tone is problematic.
+          `),
+          commentGradeReasoning: z.string().describe(`
+            Detail your reasoning for assigning this grade.
+          `),
         }),
       )
       .describe("Reports about each PR comment"),
