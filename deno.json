@@ -1,6 +1,7 @@
 {
   "tasks": {
-    "start": "deno run --allow-net --allow-env --env-file src/main.ts"
+    "start": "deno run --allow-net --allow-read=book-pr-splits.json --allow-env --env-file src/main.ts",
+    "create-book-store": "deno run --allow-net --allow-read=book-pr.md --allow-write=book-pr-splits.json --allow-env --env-file src/create-book-store.ts"
   },
   "imports": {
     "@langchain/community": "npm:@langchain/community@^0.3.16",
@@ -8,12 +9,12 @@
     "@langchain/langgraph": "npm:@langchain/langgraph@^0.2.23",
     "@langchain/openai": "npm:@langchain/openai@^0.3.14",
     "@std/assert": "jsr:@std/assert@1",
-    "octokit": "npm:octokit@4.0.2"
+    "langchain": "npm:langchain@^0.3.6",
+    "octokit": "npm:octokit@4.0.2",
+    "zod": "npm:zod@^3.23.8"
   },
   "fmt": {
     "singleQuote": true,
-    "semiColons": false,
-    "include": ["src/"]
+    "semiColons": false
   }
 }
-

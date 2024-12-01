@@ -1,8 +1,21 @@
+// deno-lint-ignore-file no-explicit-any
+
 import { Octokit } from "octokit";
-import { ChatOpenAI } from "@langchain/openai";
-import { MemorySaver } from "@langchain/langgraph";
-import { createReactAgent } from "@langchain/langgraph/prebuilt";
-import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { ChatOpenAI, OpenAIEmbeddings } from "@langchain/openai";
+import { Annotation, StateGraph } from "@langchain/langgraph";
+import { ToolNode } from "@langchain/langgraph/prebuilt";
+import {
+  BaseMessage,
+  HumanMessage,
+  SystemMessage,
+} from "@langchain/core/messages";
+import { MemoryVectorStore } from "langchain/vectorstores/memory";
+import { createRetrieverTool } from "langchain/tools/retriever";
+import { z } from "zod";
+import { messagesStateReducer } from "@langchain/langgraph";
+import { tool } from "@langchain/core/tools";
+import { AIMessage } from "@langchain/core";
+import { RunnableConfig } from "@langchain/core/runnables";
 
 const octokit = new Octokit({
   auth: Deno.env.get("GITHUB_TOKEN"),
@@ -29,38 +42,101 @@ async function main() {
 
   console.log(pullRequestInfoAndCommentsAsString);
 
-  const agentModel = new ChatOpenAI({
-    openAIApiKey: Deno.env.get("OPENAI_API_KEY"),
-    temperature: 0,
-  });
-  const agentCheckpointer = new MemorySaver();
-  const agent = createReactAgent({
-    llm: agentModel as any,
-    tools: [],
-    checkpointSaver: agentCheckpointer,
+  const GraphState = Annotation.Root({
+    messages: Annotation<BaseMessage[]>({
+      reducer: messagesStateReducer,
+    }),
   });
 
-  const agentFinalState = await agent.invoke(
-    {
-      messages: [
-        new SystemMessage(`
-          You are a Staff Developer responsible for code review evaluations.
-          You will receive the pull request (PR) description and a list of
-          comments on the pull PR, and you're expected to write a report
-          of the code review itself.
-          The report reader needs to know from your report:
-            - if the PR description is complete enough to understand what the
-              PR is for, and its context.
-            - if the comments are constructive, give the proper feedback
-              with appropriate tone.
-          Conclude the report with advice for the reviewers and the PR creator
-          so they can improve their future code reviews.
-        `),
-        new HumanMessage(pullRequestInfoAndCommentsAsString),
-      ],
-    },
-    { configurable: { thread_id: 42 } },
-  );
+  const bookRetrieverTool = await getBookRetrieverTool();
+
+  const finalResponseTool = tool(() => {}, {
+    name: "Response",
+    description: "Always respond to the user using this tool.",
+    schema: z.object({
+      descriptionReport: z.string().describe(`
+        A report about the PR description.
+        Should include answers to questions such as but not limited to:
+          - Is it complete?
+          - Does it contain the necessary context?
+          - Does the tone invite to review the PR?
+      `),
+      descriptionReportBookReferences: z.array(z.string()).describe(`
+        Chapters referenced in the description report.
+      `),
+      commentReports: z
+        .array(
+          z.object({
+            commentId: z.number().describe("The ID of the comment"),
+            commentReport: z.string().describe(`
+              A report about the comment
+              Should include answers to questions such as but not limited to:
+                - Does it offer constructive feedback?
+                - Does it foster valuable conversation?
+                - Is the tone nice?
+            `),
+            commentReportBookReferences: z.array(z.string()).describe(`
+              Chapters referenced in the comment report.
+            `),
+          }),
+        )
+        .describe("Reports about each PR comment"),
+    }),
+  });
+
+  const tools = [bookRetrieverTool, finalResponseTool];
+  const toolNode = new ToolNode<typeof GraphState.State>(tools);
+
+  const agentModel = new ChatOpenAI({
+    model: "gpt-4o",
+    openAIApiKey: Deno.env.get("OPENAI_API_KEY"),
+    temperature: 0,
+  }).bindTools(tools);
+
+  const route = (state: typeof GraphState.State) => {
+    const { messages } = state;
+    const lastMessage = messages[messages.length - 1] as AIMessage;
+    if (!lastMessage.tool_calls || lastMessage.tool_calls.length === 0) {
+      return "__end__";
+    }
+    if (lastMessage.tool_calls[0].name === "Response") {
+      return "__end__";
+    }
+    return "tools";
+  };
+
+  const callModel = async (
+    state: typeof GraphState.State,
+    config?: RunnableConfig,
+  ) => {
+    const { messages } = state;
+    const response = await agentModel.invoke(messages, config as any);
+    return { messages: [response] };
+  };
+
+  const workflow = new StateGraph(GraphState)
+    .addNode("agent", callModel)
+    .addNode("tools", toolNode)
+    .addEdge("__start__", "agent")
+    .addConditionalEdges("agent", route, { __end__: "__end__", tools: "tools" })
+    .addEdge("tools", "agent");
+  const app = workflow.compile();
+
+  const agentFinalState = await app.invoke({
+    messages: [
+      new SystemMessage(`
+        You are a Staff Developer responsible for code review evaluations.
+        You will receive the pull request (PR) description and a list of
+        comments on the pull PR, and you're expected to write a report
+        of the code review itself.
+
+        You *must* use the book Pull Requests and Code Review to know the
+        best practices. It is very generic, no need to try to get information
+        about this specific pull request.
+      `),
+      new HumanMessage(pullRequestInfoAndCommentsAsString),
+    ],
+  });
 
   console.log(agentFinalState);
 }
@@ -68,6 +144,43 @@ async function main() {
 if (import.meta.main) {
   await main();
   Deno.exit(0);
+}
+
+async function getBookRetrieverTool() {
+  const splitsJsonFile = import.meta.dirname + "/../book-pr-splits.json";
+  const splitsJson = await Deno.readTextFile(splitsJsonFile);
+  const splits = JSON.parse(splitsJson);
+
+  const vectorStore = await MemoryVectorStore.fromDocuments(
+    splits,
+    new OpenAIEmbeddings({
+      openAIApiKey: Deno.env.get("OPENAI_API_KEY"),
+    }),
+  );
+
+  const retriever = vectorStore.asRetriever();
+  const retrieverTool = createRetrieverTool(retriever, {
+    name: "retrieve_pull_requests_code_review",
+    description: `
+      A book containing good practice for pull requests and code review.
+      Here is its outline:
+        - Create your PR before the code is ready for review
+        - Make people want to review your PR
+        - Be your PR’s first reviewer
+        - Assign the right reviewers to your PR
+        - Be responsive to comments
+        - If you want people to review your PRs, you have to review theirs
+        - You can review code even if you are a junior developer
+        - Check the right things during code review
+        - Use the right tone in your comments
+        - Be clear about whether a change is required for you to approve the PR or not
+        - Review your review before submitting it
+        - Approve the PR when the submitter made all the changes you asked
+        - Some conflicts can’t be solved in comments
+    `,
+  });
+
+  return retrieverTool;
 }
 
 function newURLSafe(s: string) {
