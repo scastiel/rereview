@@ -8,6 +8,26 @@ import { Hono } from "hono";
 import { jsxRenderer } from "hono/jsx-renderer";
 import { Fragment, Suspense } from "hono/jsx";
 import { match } from "ts-pattern";
+import { decorateFunctionWithCache, hash } from "./helpers/cache.ts";
+
+const cachedGeneratePullRequestReport = decorateFunctionWithCache(
+  generatePullRequestReport,
+  async (params) => [
+    "generatePullRequestReport",
+    await hash(JSON.stringify(params)),
+  ],
+  24 * 60 * 60 * 1000, // 1 day
+);
+const cachedGetPullRequestInfoAndComments = decorateFunctionWithCache(
+  getPullRequestInfoAndComments,
+  ({ owner, repo, pullNumber }) => [
+    "getPullRequestInfoAndComments",
+    owner,
+    repo,
+    pullNumber,
+  ],
+  60 * 1000, // 1 minute
+);
 
 const app = new Hono();
 
@@ -44,7 +64,13 @@ const App = ({
 
       {pullRequestUrlString && (
         <main class="max-w-screen-md mx-auto p-4">
-          <Suspense fallback={<p>Loading…</p>}>
+          <Suspense
+            fallback={
+              <p class="text-center p-16 text-gray-500">
+                Loading Pull Request…
+              </p>
+            }
+          >
             <PullRequestLoader pullRequestUrlString={pullRequestUrlString} />
           </Suspense>
         </main>
@@ -68,7 +94,7 @@ const PullRequestLoader = async ({
     const { owner, repo, pullNumber } = pullRequestParams;
 
     const { pullRequest, issueComments, pullRequestComments } =
-      await getPullRequestInfoAndComments({ owner, repo, pullNumber });
+      await cachedGetPullRequestInfoAndComments({ owner, repo, pullNumber });
 
     return (
       <Suspense
@@ -98,7 +124,7 @@ const PullRequestReportLoader = async ({
   pullRequestComments,
 }: Awaited<ReturnType<typeof getPullRequestInfoAndComments>>) => {
   try {
-    const report = await generatePullRequestReport({
+    const report = await cachedGeneratePullRequestReport({
       pullRequest,
       issueComments,
       pullRequestComments,
