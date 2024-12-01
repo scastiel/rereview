@@ -1,6 +1,7 @@
 {
   "tasks": {
     "start": "deno run --allow-net --allow-read=book-pr-splits.json --allow-env --env-file src/main.ts",
+    "serve": "deno run --allow-net --allow-read=book-pr-splits.json --allow-env --env-file src/serve.ts",
     "create-book-store": "deno run --allow-net --allow-read=book-pr.md --allow-write=book-pr-splits.json --allow-env --env-file src/create-book-store.ts"
   },
   "imports": {
