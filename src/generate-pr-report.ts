@@ -54,6 +54,9 @@ export async function generatePullRequestReport(pullRequestUrlString: string) {
       .array(
         z.object({
           commentId: z.number().describe("The ID of the comment"),
+          isAutomated: z
+            .boolean()
+            .describe("Wether the comment is automated (posted by a bot)"),
           commentReport: z.string().describe(`
               A report about the comment
               Should include answers to questions such as but not limited to:
@@ -179,11 +182,12 @@ async function getPullRequestInfoAndCommentsAsString({
   repo: string;
   pullNumber: number;
 }) {
-  const { pullRequest, comments } = await getPullRequestInfoAndComments({
-    owner,
-    repo,
-    pullNumber,
-  });
+  const { pullRequest, issueComments, pullRequestComments } =
+    await getPullRequestInfoAndComments({
+      owner,
+      repo,
+      pullNumber,
+    });
 
   let result = "";
 
@@ -196,10 +200,23 @@ async function getPullRequestInfoAndCommentsAsString({
       .join("\n") ?? "> (no description)") + "\n";
   result += "\n";
 
-  for (const comment of comments) {
+  for (const comment of issueComments) {
     if (!comment.user || !comment.body) continue;
 
     result += `Comment by @${comment.user?.login} (ID: ${comment.id}):\n`;
+    result +=
+      comment.body
+        .trim()
+        .split("\n")
+        .map((s) => `> ${s}`)
+        .join("\n") + "\n";
+    result += "\n";
+  }
+
+  for (const comment of pullRequestComments) {
+    if (!comment.user || !comment.body) continue;
+
+    result += `Comment by @${comment.user?.login} (ID: ${comment.id}${comment.in_reply_to_id ? `, in reply to ${comment.in_reply_to_id}` : ""}):\n`;
     result +=
       comment.body
         .trim()
@@ -233,7 +250,7 @@ async function getPullRequestInfoAndComments({
     },
   );
 
-  const { data: comments } = await octokit.request(
+  const { data: issueComments } = await octokit.request(
     "GET /repos/{owner}/{repo}/issues/{issue_number}/comments",
     {
       owner,
@@ -245,7 +262,19 @@ async function getPullRequestInfoAndComments({
     },
   );
 
-  return { pullRequest, comments };
+  const { data: pullRequestComments } = await octokit.request(
+    "GET /repos/{owner}/{repo}/pulls/{pull_number}/comments",
+    {
+      owner,
+      repo,
+      pull_number: pullNumber,
+      headers: {
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    },
+  );
+
+  return { pullRequest, issueComments, pullRequestComments };
 }
 
 function getPullRequestParams(pullRequestUrlString: string) {
