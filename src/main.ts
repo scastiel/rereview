@@ -1,4 +1,8 @@
-import { generatePullRequestReport } from "./generate-pr-report.ts";
+import {
+  generatePullRequestReport,
+  getPullRequestInfoAndComments,
+  getPullRequestParams,
+} from "./generate-pr-report.ts";
 
 async function main() {
   const [pullRequestUrlString] = Deno.args;
@@ -9,7 +13,21 @@ async function main() {
     Deno.exit(1);
   }
 
-  const report = await generatePullRequestReport(pullRequestUrlString);
+  const pullRequestParams = getPullRequestParams(pullRequestUrlString);
+  if (!pullRequestParams) {
+    console.error(`Invalid GitHub pull request URL: ${pullRequestUrlString}`);
+    return;
+  }
+  const { owner, repo, pullNumber } = pullRequestParams;
+
+  const { pullRequest, issueComments, pullRequestComments } =
+    await getPullRequestInfoAndComments({ owner, repo, pullNumber });
+
+  const report = await generatePullRequestReport({
+    pullRequest,
+    issueComments,
+    pullRequestComments,
+  });
 
   console.log(report);
 }

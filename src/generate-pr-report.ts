@@ -21,15 +21,19 @@ const octokit = new Octokit({
   auth: Deno.env.get("GITHUB_TOKEN"),
 });
 
-export async function generatePullRequestReport(pullRequestUrlString: string) {
-  const pullRequestParams = getPullRequestParams(pullRequestUrlString);
-  if (!pullRequestParams) {
-    throw new Error(`Invalid GitHub pull request URL: ${pullRequestUrlString}`);
-  }
-  const { owner, repo, pullNumber } = pullRequestParams;
+export type Report = Awaited<ReturnType<typeof generatePullRequestReport>>;
 
+export async function generatePullRequestReport({
+  pullRequest,
+  issueComments,
+  pullRequestComments,
+}: Awaited<ReturnType<typeof getPullRequestInfoAndComments>>) {
   const pullRequestInfoAndCommentsAsString =
-    await getPullRequestInfoAndCommentsAsString({ owner, repo, pullNumber });
+    getPullRequestInfoAndCommentsAsString({
+      pullRequest,
+      issueComments,
+      pullRequestComments,
+    });
 
   const GraphState = Annotation.Root({
     messages: Annotation<BaseMessage[]>({
@@ -189,22 +193,11 @@ function newURLSafe(s: string) {
   }
 }
 
-async function getPullRequestInfoAndCommentsAsString({
-  owner,
-  repo,
-  pullNumber,
-}: {
-  owner: string;
-  repo: string;
-  pullNumber: number;
-}) {
-  const { pullRequest, issueComments, pullRequestComments } =
-    await getPullRequestInfoAndComments({
-      owner,
-      repo,
-      pullNumber,
-    });
-
+function getPullRequestInfoAndCommentsAsString({
+  pullRequest,
+  issueComments,
+  pullRequestComments,
+}: Awaited<ReturnType<typeof getPullRequestInfoAndComments>>) {
   let result = "";
 
   result += `Pull Request: '${pullRequest.title}' by @${pullRequest.user.login}\n`;
@@ -245,7 +238,7 @@ async function getPullRequestInfoAndCommentsAsString({
   return result;
 }
 
-async function getPullRequestInfoAndComments({
+export async function getPullRequestInfoAndComments({
   owner,
   repo,
   pullNumber,
@@ -293,7 +286,7 @@ async function getPullRequestInfoAndComments({
   return { pullRequest, issueComments, pullRequestComments };
 }
 
-function getPullRequestParams(pullRequestUrlString: string) {
+export function getPullRequestParams(pullRequestUrlString: string) {
   const pullRequestUrl = newURLSafe(pullRequestUrlString);
   if (!pullRequestUrl || pullRequestUrl.hostname !== "github.com") {
     return null;
