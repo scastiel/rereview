@@ -7,6 +7,7 @@
     "npm:@langchain/core@~0.3.19": "0.3.19_zod@3.23.8",
     "npm:@langchain/langgraph@~0.2.23": "0.2.23_@langchain+core@0.3.19__zod@3.23.8",
     "npm:@langchain/openai@~0.3.14": "0.3.14_@langchain+core@0.3.19__zod@3.23.8_zod@3.23.8_openai@4.73.1__zod@3.23.8",
+    "npm:@neondatabase/serverless@~0.10.4": "0.10.4",
     "npm:langchain@~0.3.6": "0.3.6_@langchain+core@0.3.19__zod@3.23.8_zod@3.23.8",
     "npm:octokit@4.0.2": "4.0.2_@octokit+core@6.1.2",
     "npm:zod@^3.23.8": "3.23.8"
@@ -273,6 +274,12 @@
         "js-tiktoken"
       ]
     },
+    "@neondatabase/serverless@0.10.4": {
+      "integrity": "sha512-2nZuh3VUO9voBauuh+IGYRhGU/MskWHt1IuZvHcJw6GLjDgtqj/KViKo7SIrLdGLdot7vFbiRRw+BgEy3wT9HA==",
+      "dependencies": [
+        "@types/pg"
+      ]
+    },
     "@octokit/app@15.1.1_@octokit+core@6.1.2": {
       "integrity": "sha512-fk8xrCSPTJGpyBdBNI+DcZ224dm0aApv4vi6X7/zTmANXlegKV2Td+dJ+fd7APPaPN7R+xttUsj2Fm+AFDSfMQ==",
       "dependencies": [
@@ -508,6 +515,14 @@
       "integrity": "sha512-FDuKUJQm/ju9fT/SeX/6+gBzoPzlVCzfzmGkwKvRHQVxi4BntVbyIwf6a4Xn62mrvndLiml6z/UBXIdEVjQLXg==",
       "dependencies": [
         "undici-types@6.19.8"
+      ]
+    },
+    "@types/pg@8.11.6": {
+      "integrity": "sha512-/2WmmBXHLsfRqzfHW7BNZ8SbYzE8OSk7i3WjFYvfgRHj7S1xj+16Je5fUKv3lVdVzk/zn9TXOqf+avFCFIE0yQ==",
+      "dependencies": [
+        "@types/node@22.5.4",
+        "pg-protocol",
+        "pg-types"
       ]
     },
     "@types/retry@0.12.0": {
@@ -854,6 +869,9 @@
         "whatwg-url"
       ]
     },
+    "obuf@1.1.2": {
+      "integrity": "sha512-PX1wu0AmAdPqOL1mWhqmlOd8kOIZQwGZw6rh7uby9fTc5lhaOWFLX3I6R1hrF9k3zUY40e6igsLGkDXK92LJNg=="
+    },
     "octokit@4.0.2_@octokit+core@6.1.2": {
       "integrity": "sha512-wbqF4uc1YbcldtiBFfkSnquHtECEIpYD78YUXI6ri1Im5OO2NLo6ZVpRdbJpdnpZ05zMrVPssNiEo6JQtea+Qg==",
       "dependencies": [
@@ -911,6 +929,27 @@
     "peek-readable@4.1.0": {
       "integrity": "sha512-ZI3LnwUv5nOGbQzD9c2iDG6toheuXSZP5esSHBjopsXH4dg19soufvpUGA3uohi5anFtGb2lhAVdHzH6R/Evvg=="
     },
+    "pg-int8@1.0.1": {
+      "integrity": "sha512-WCtabS6t3c8SkpDBUlb1kjOs7l66xsGdKpIPZsg4wR+B3+u9UAum2odSsF9tnvxg80h4ZxLWMy4pRjOsFIqQpw=="
+    },
+    "pg-numeric@1.0.2": {
+      "integrity": "sha512-BM/Thnrw5jm2kKLE5uJkXqqExRUY/toLHda65XgFTBTFYZyopbKjBe29Ii3RbkvlsMoFwD+tHeGaCjjv0gHlyw=="
+    },
+    "pg-protocol@1.7.0": {
+      "integrity": "sha512-hTK/mE36i8fDDhgDFjy6xNOG+LCorxLG3WO17tku+ij6sVHXh1jQUJ8hYAnRhNla4QVD2H8er/FOjc/+EgC6yQ=="
+    },
+    "pg-types@4.0.2": {
+      "integrity": "sha512-cRL3JpS3lKMGsKaWndugWQoLOCoP+Cic8oseVcbr0qhPzYD5DWXK+RZ9LY9wxRf7RQia4SCwQlXk0q6FCPrVng==",
+      "dependencies": [
+        "pg-int8",
+        "pg-numeric",
+        "postgres-array",
+        "postgres-bytea",
+        "postgres-date",
+        "postgres-interval",
+        "postgres-range"
+      ]
+    },
     "playwright-core@1.49.0": {
       "integrity": "sha512-R+3KKTQF3npy5GTiKH/T+kdhoJfJojjHESR1YEWhYuEKRVfVaxH3+4+GvXE5xyCngCxhxnykk0Vlah9v8fs3jA=="
     },
@@ -920,6 +959,24 @@
         "fsevents",
         "playwright-core"
       ]
+    },
+    "postgres-array@3.0.2": {
+      "integrity": "sha512-6faShkdFugNQCLwucjPcY5ARoW1SlbnrZjmGl0IrrqewpvxvhSLHimCVzqeuULCbG0fQv7Dtk1yDbG3xv7Veog=="
+    },
+    "postgres-bytea@3.0.0": {
+      "integrity": "sha512-CNd4jim9RFPkObHSjVHlVrxoVQXz7quwNFpz7RY1okNNme49+sVyiTvTRobiLV548Hx/hb1BG+iE7h9493WzFw==",
+      "dependencies": [
+        "obuf"
+      ]
+    },
+    "postgres-date@2.1.0": {
+      "integrity": "sha512-K7Juri8gtgXVcDfZttFKVmhglp7epKb1K4pgrkLxehjqkrgPhfG6OO8LHLkfaqkbpjNRnra018XwAr1yQFWGcA=="
+    },
+    "postgres-interval@3.0.0": {
+      "integrity": "sha512-BSNDnbyZCXSxgA+1f5UU2GmwhoI0aU5yMxRGO8CdFEcY2BQF9xm/7MqKnYoM1nJDk8nONNWDk9WeSmePFhQdlw=="
+    },
+    "postgres-range@1.1.4": {
+      "integrity": "sha512-i/hbxIE9803Alj/6ytL7UHQxRvZkI9O4Sy+J3HGc4F4oo/2eQAjTSNJ0bfxyse3bH0nuVesCk+3IRLaMtG3H6w=="
     },
     "proxy-from-env@1.1.0": {
       "integrity": "sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg=="
@@ -1164,6 +1221,7 @@
       "npm:@langchain/core@~0.3.19",
       "npm:@langchain/langgraph@~0.2.23",
       "npm:@langchain/openai@~0.3.14",
+      "npm:@neondatabase/serverless@~0.10.4",
       "npm:langchain@~0.3.6",
       "npm:octokit@4.0.2",
       "npm:zod@^3.23.8"

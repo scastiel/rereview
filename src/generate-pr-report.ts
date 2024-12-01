@@ -9,13 +9,13 @@ import {
   HumanMessage,
   SystemMessage,
 } from "@langchain/core/messages";
-import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { createRetrieverTool } from "langchain/tools/retriever";
 import { z } from "zod";
 import { messagesStateReducer } from "@langchain/langgraph";
 import { tool } from "@langchain/core/tools";
 import { AIMessage } from "@langchain/core";
 import { RunnableConfig } from "@langchain/core/runnables";
+import { NeonPostgres } from "@langchain/community/vectorstores/neon";
 
 const octokit = new Octokit({
   auth: Deno.env.get("GITHUB_TOKEN"),
@@ -133,19 +133,12 @@ export async function generatePullRequestReport(pullRequestUrlString: string) {
 }
 
 async function getBookRetrieverTool() {
-  const splitsJsonFile = import.meta.dirname + "/../book-pr-splits.json";
-  const splitsJson = await Deno.readTextFile(splitsJsonFile);
-  const splits = JSON.parse(splitsJson);
-
-  const vectorStore = await MemoryVectorStore.fromDocuments(
-    splits,
-    new OpenAIEmbeddings({
-      openAIApiKey: Deno.env.get("OPENAI_API_KEY"),
-    }),
-  );
+  const vectorStore = await NeonPostgres.initialize(new OpenAIEmbeddings(), {
+    connectionString: Deno.env.get("DATABASE_URL") as string,
+  });
 
   const retriever = vectorStore.asRetriever();
-  const retrieverTool = createRetrieverTool(retriever, {
+  const retrieverTool = createRetrieverTool(retriever as any, {
     name: "retrieve_pull_requests_code_review",
     description: `
       A book containing good practice for pull requests and code review.

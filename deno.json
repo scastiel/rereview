@@ -1,14 +1,15 @@
 {
   "tasks": {
-    "start": "deno run --allow-net --allow-read=book-pr-splits.json --allow-env --env-file src/main.ts",
-    "serve": "deno run --allow-net --allow-read=book-pr-splits.json --allow-env --env-file src/serve.ts",
-    "create-book-store": "deno run --allow-net --allow-read=book-pr.md --allow-write=book-pr-splits.json --allow-env --env-file src/create-book-store.ts"
+    "start": "deno run --allow-net --allow-env --env-file src/main.ts",
+    "serve": "deno run --allow-net --allow-env --env-file src/serve.ts",
+    "create-book-store": "deno run --allow-net --allow-read=book-pr.md --allow-env --env-file src/create-book-store.ts"
   },
   "imports": {
     "@langchain/community": "npm:@langchain/community@^0.3.16",
     "@langchain/core": "npm:@langchain/core@^0.3.19",
     "@langchain/langgraph": "npm:@langchain/langgraph@^0.2.23",
     "@langchain/openai": "npm:@langchain/openai@^0.3.14",
+    "@neondatabase/serverless": "npm:@neondatabase/serverless@^0.10.4",
     "@std/assert": "jsr:@std/assert@1",
     "langchain": "npm:langchain@^0.3.6",
     "octokit": "npm:octokit@4.0.2",
