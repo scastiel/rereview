@@ -5,6 +5,7 @@
     "create-book-store": "deno run --allow-net --allow-read=book-pr.md --allow-env --env-file src/create-book-store.ts"
   },
   "imports": {
+    "@deno/gfm": "jsr:@deno/gfm@^0.10.0",
     "@langchain/community": "npm:@langchain/community@^0.3.16",
     "@langchain/core": "npm:@langchain/core@^0.3.19",
     "@langchain/langgraph": "npm:@langchain/langgraph@^0.2.23",

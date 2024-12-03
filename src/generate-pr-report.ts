@@ -77,11 +77,14 @@ export async function generatePullRequestReport({
 
   const schema = z.object({
     descriptionReport: z.string().describe(`
-      A report about the PR description.
+      A short Markdown-formatted report about the PR description.
       Should include answers to questions such as but not limited to:
         - Is it complete?
         - Does it contain the necessary context?
         - Does the tone invite to review the PR?
+      The report's length should be at least 200 characters, but also
+      reflect the description length. No need for it to be too long
+      if the description is short.
     `),
     descriptionReportBookReferences: z.array(z.string()).describe(`
       Chapters referenced in the description report.
@@ -102,11 +105,15 @@ export async function generatePullRequestReport({
             .boolean()
             .describe("Wether the comment is automated (posted by a bot)"),
           commentReport: z.string().describe(`
-            A report about the comment.
+            A short (2-paragraph, 300-600 chars) Markdown-formatted report
+            about the comment.
             Should include answers to questions such as but not limited to:
               - Does it offer constructive feedback?
               - Does it foster valuable conversation?
               - Is the tone nice?
+            The report's length should be at least 150 characters, but also 
+            reflect the comment length. No need for it to be too long if
+            the comment is short.
           `),
           commentReportBookReferences: z.array(z.string()).describe(`
             Chapters referenced in the comment report.
