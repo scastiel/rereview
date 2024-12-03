@@ -1,6 +1,6 @@
 export type CacheResult<T> = { date: string; result: T };
 
-const CACHE_VERSION = "V1";
+const CACHE_VERSION = "V2";
 
 export const decorateFunctionWithCache = <P extends unknown[], R>(
   fn: (...params: P) => Promise<R>,

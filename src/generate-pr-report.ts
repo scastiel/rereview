@@ -53,7 +53,7 @@ export async function generatePullRequestReport({
       const { owner, repo } = params;
 
       const issue = await getIssue({ owner, repo, issueNumber });
-      if (!issue) return "No issue found with this number.";
+      if (!issue) throw new Error("No issue found with this number.");
 
       let res = "";
       res += `Issue '${issue.title}' by ${issue.user?.login}\n`;
@@ -126,7 +126,7 @@ export async function generatePullRequestReport({
 
   const finalResponseTool = tool(() => {}, {
     name: "Response",
-    description: "Always respond to the user using this tool.",
+    description: "Always respond to the user using this tool one-shot.",
     schema,
   });
 
@@ -180,8 +180,9 @@ export async function generatePullRequestReport({
         best practices. It is very generic, no need to try to get information
         about this specific pull request.
 
-        When encountering an issue number (e.g. '#123'), you can use the tool
-        issueTool to get information about the issue.
+        When encountering an issue or pull request number (e.g. '#123') (it can 
+        be part of a GitHub URL), you can use the tool issueTool to get
+        information about it.
       `),
       new HumanMessage(pullRequestInfoAndCommentsAsString),
     ],
