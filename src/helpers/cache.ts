@@ -19,7 +19,11 @@ export const decorateFunctionWithCache = <P extends unknown[], R>(
     }
 
     const result = await fn(...params);
-    await kv.set(key, { date: new Date().toISOString(), result });
+    try {
+      await kv.set(key, { date: new Date().toISOString(), result });
+    } catch (err) {
+      console.error("Unable to save the result:", err);
+    }
     return result;
   };
 };

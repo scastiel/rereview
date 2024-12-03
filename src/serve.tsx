@@ -39,6 +39,10 @@ const App = ({
   return (
     <>
       <header class="bg-white z-10 border-b sticky top-0 max-w-screen-md mx-auto p-4">
+        <h1 class="font-bold text-xl">Rereview</h1>
+        <p class="mb-4 text-sm italic">
+          Evaluate how good the communication is in your pull request.
+        </p>
         <form method="get" action="/" class="flex gap-1 items-end">
           <div class="flex flex-col gap-1 flex-1">
             <label for="url" class="font-semibold text-sm">
