@@ -43,6 +43,38 @@ export async function generatePullRequestReport({
 
   const bookRetrieverTool = await getBookRetrieverTool();
 
+  const issueTool = tool(
+    async ({ issueNumber }) => {
+      const params = getPullRequestParams(pullRequest.html_url);
+      if (!params)
+        throw new Error(
+          `Cannot get parameters of pull request at ${pullRequest.html_url}`,
+        );
+      const { owner, repo } = params;
+
+      const issue = await getIssue({ owner, repo, issueNumber });
+      if (!issue) return "No issue found with this number.";
+
+      let res = "";
+      res += `Issue '${issue.title}' by ${issue.user?.login}\n`;
+      res += `Issue description:\n`;
+      res +=
+        (issue.body
+          ?.split("\n")
+          .map((l) => `> ${l}`)
+          .join("\n") ?? "No description") + "\n";
+
+      return res;
+    },
+    {
+      name: "getIssue",
+      description: "Return information about a GitHub issue.",
+      schema: z.object({
+        issueNumber: z.number().describe("The issue number"),
+      }),
+    },
+  );
+
   const schema = z.object({
     descriptionReport: z.string().describe(`
       A report about the PR description.
@@ -98,7 +130,7 @@ export async function generatePullRequestReport({
     schema,
   });
 
-  const tools = [bookRetrieverTool, finalResponseTool];
+  const tools = [bookRetrieverTool, issueTool, finalResponseTool];
   const toolNode = new ToolNode<typeof GraphState.State>(tools);
 
   const agentModel = new ChatOpenAI({
@@ -147,6 +179,9 @@ export async function generatePullRequestReport({
         You *must* use the book Pull Requests and Code Review to know the
         best practices. It is very generic, no need to try to get information
         about this specific pull request.
+
+        When encountering an issue number (e.g. '#123'), you can use the tool
+        issueTool to get information about the issue.
       `),
       new HumanMessage(pullRequestInfoAndCommentsAsString),
     ],
@@ -236,6 +271,30 @@ function getPullRequestInfoAndCommentsAsString({
   }
 
   return result;
+}
+
+async function getIssue({
+  owner,
+  repo,
+  issueNumber,
+}: {
+  owner: string;
+  repo: string;
+  issueNumber: number;
+}) {
+  const { data: issue } = await octokit.request(
+    "GET /repos/{owner}/{repo}/issues/{issue_number}",
+    {
+      owner,
+      repo,
+      issue_number: issueNumber,
+      headers: {
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    },
+  );
+
+  return issue;
 }
 
 export async function getPullRequestInfoAndComments({

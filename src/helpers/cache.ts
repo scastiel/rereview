@@ -1,5 +1,7 @@
 export type CacheResult<T> = { date: string; result: T };
 
+const CACHE_VERSION = "V1";
+
 export const decorateFunctionWithCache = <P extends unknown[], R>(
   fn: (...params: P) => Promise<R>,
   keyForParams: (...params: P) => Deno.KvKey | Promise<Deno.KvKey>,
@@ -7,17 +9,19 @@ export const decorateFunctionWithCache = <P extends unknown[], R>(
 ): ((...params: P) => Promise<R>) => {
   return async (...params: P) => {
     const kv = await Deno.openKv();
-    const key = await keyForParams(...params);
+    const key = [CACHE_VERSION, ...(await keyForParams(...params))];
 
     const cachedResult = await kv.get<CacheResult<R>>(key);
     if (cachedResult.value) {
       const date = new Date(cachedResult.value.date);
       const age = Date.now() - date.valueOf();
       if (age < cacheDuration) {
+        console.log("Cache for key", key, "present");
         return cachedResult.value.result;
       }
     }
 
+    console.log("Calculating value for key", key);
     const result = await fn(...params);
     try {
       await kv.set(key, { date: new Date().toISOString(), result });
